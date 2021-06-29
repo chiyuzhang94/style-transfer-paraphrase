@@ -1,12 +1,12 @@
 import torch
-from test_sim.sim_models import WordAveraging
-from test_sim.sim_utils import Example
+from style_paraphrase.evaluation.similarity.sim_models import WordAveraging
+from style_paraphrase.evaluation.similarity.sim_utils import Example
 from nltk.tokenize import TreebankWordTokenizer
 import sentencepiece as spm
 
 tok = TreebankWordTokenizer()
 
-model = torch.load('style_paraphrase/evaluation/similarity/sim/sim.pt')
+model = torch.load('/home/chiyu94/scratch/hashtag_paraphrase/evaluation/sim/sim.pt')
 state_dict = model['state_dict']
 vocab_words = model['vocab_words']
 args = model['args']
@@ -14,7 +14,7 @@ args = model['args']
 model = WordAveraging(args, vocab_words)
 model.load_state_dict(state_dict, strict=True)
 sp = spm.SentencePieceProcessor()
-sp.Load('style_paraphrase/evaluation/similarity/sim/sim.sp.30k.model')
+sp.Load('/home/chiyu94/scratch/hashtag_paraphrase/evaluation/sim/sim.sp.30k.model')
 model.eval()
 
 def make_example(sentence, model):

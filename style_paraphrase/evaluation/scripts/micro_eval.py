@@ -1,4 +1,4 @@
-import argparse
+import argparse, json, os
 import numpy as np
 
 parser = argparse.ArgumentParser()
@@ -8,13 +8,17 @@ parser.add_argument('--classifier_file', default=None, type=str)
 parser.add_argument('--paraphrase_file', default=None, type=str)
 parser.add_argument('--acceptability_file', default=None, type=str)
 parser.add_argument('--expected_classifier_value', default="correct", type=str)
+parser.add_argument('--output_path', type=str, default=None)
 args = parser.parse_args()
 
 with open(args.generated_file, "r") as f:
-    generated_data = f.read().strip().split("\n")
+    generated_dataset = f.read().strip().split("\n")
+generated_data = [json.loads(x)["paraphrase"] for x in generated_dataset] 
+orginal_tweet_data = [json.loads(x)["org_tweet"] for x in generated_dataset]
 
 with open(args.classifier_file, "r") as f:
     classifier_data = f.read().strip().split("\n")
+classifier_data = classifier_data[1:]
 
 with open(args.paraphrase_file, "r") as f:
     paraphrase_data = f.read().strip().split("\n")
@@ -44,46 +48,50 @@ normalized_generated_data = {
     "acc_cola_sim": []
 }
 
-for cd, pd, gd, ad in zip(classifier_data, paraphrase_data, generated_data, acceptability_data):
+for cd, pd, gd, ad, otd in zip(classifier_data, paraphrase_data, generated_data, acceptability_data, orginal_tweet_data):
     curr_scores = max([float(x) for x in pd.split(",")])
 
     # check acc_sim
-    if cd.split(",")[0] == args.expected_classifier_value:
+    if cd.split("\t")[0] == cd.split("\t")[1]:
         valid_count["acc_sim"] += 1
         scores["acc_sim"].append(curr_scores)
-        normalized_generated_data["acc_sim"].append(gd)
+        normalized_generated_data["acc_sim"].append(cd.split("\t")[0]+"\t"+gd+"\t"+otd)
     else:
         scores["acc_sim"].append(0)
-        normalized_generated_data["acc_sim"].append("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+        normalized_generated_data["acc_sim"].append("xxxxx\txxxxxxxx\txxxxxxxxxxxxxxxx")
 
     # check cola_sim
     if ad == "acceptable":
         valid_count["cola_sim"] += 1
         scores["cola_sim"].append(curr_scores)
-        normalized_generated_data["cola_sim"].append(gd)
+        normalized_generated_data["cola_sim"].append(cd.split("\t")[0]+"\t"+gd+"\t"+otd)
     else:
         scores["cola_sim"].append(0)
-        normalized_generated_data["cola_sim"].append("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+        normalized_generated_data["cola_sim"].append("xxxxxxxx\txxxxxx\txxxxxxxxxxxxxxxx")
 
     # check acc_cola
-    if ad == "acceptable" and cd.split(",")[0] == args.expected_classifier_value:
+    if ad == "acceptable" and cd.split("\t")[0] == cd.split("\t")[1]:
         valid_count["acc_cola"] += 1
         scores["acc_cola"].append(1)
         valid_count["acc_cola_sim"] += 1
         scores["acc_cola_sim"].append(curr_scores)
-        normalized_generated_data["acc_cola_sim"].append(gd)
+        normalized_generated_data["acc_cola_sim"].append(cd.split("\t")[0]+"\t"+gd+"\t"+otd)
     else:
         scores["acc_cola"].append(0)
         scores["acc_cola_sim"].append(0)
-        normalized_generated_data["acc_cola_sim"].append("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+        normalized_generated_data["acc_cola_sim"].append("xxxxxxx\txxxxxxxxx\txxxxxxxxxxxxxxxx")
+
+summary = ""
 
 for metric in ["acc_sim", "cola_sim", "acc_cola", "acc_cola_sim"]:
-    print(
-        "Normalized pp score ({}) = {:.4f} ({:d} / {:d} valid)".format(
-            metric, np.mean(scores[metric]), valid_count[metric], len(scores[metric])
-        )
-    )
+    tmp = "Normalized pp score ({}) = {:.4f} ({:d} / {:d} valid)".format(
+            metric, np.mean(scores[metric]), valid_count[metric], len(scores[metric]))
+    print(tmp)
+    summary = summary + tmp+"\n"
 
     if metric in normalized_generated_data:
-        with open(args.generated_file + ".{}_normalized".format(metric), "w") as f:
+        with open(args.output_path + "results.{}_normalized".format(metric), "w") as f:
             f.write("\n".join(normalized_generated_data[metric]) + "\n")
+
+with open(args.output_path + "all_results_summary".format(metric), "w") as f:
+    f.write(summary)

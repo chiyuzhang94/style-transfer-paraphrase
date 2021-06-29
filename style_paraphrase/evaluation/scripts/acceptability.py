@@ -1,5 +1,5 @@
-from scipy.stats import kendalltau
-import tqdm
+# from scipy.stats import kendalltau
+import tqdm, os
 import collections
 import itertools
 import numpy as np
@@ -7,6 +7,7 @@ import torch
 import argparse
 import subprocess
 import re
+import json
 
 from fairseq.data.data_utils import collate_tokens
 from fairseq.models.roberta import RobertaModel
@@ -16,14 +17,17 @@ from utils import Bcolors
 parser = argparse.ArgumentParser()
 parser.add_argument('--input_file', default=None, type=str)
 parser.add_argument('--batch_size', default=16, type=int)
+parser.add_argument('--output_path', type=str, default=None)
 args = parser.parse_args()
 
+print("load model")
 roberta = RobertaModel.from_pretrained(
-    'style_paraphrase/evaluation/fluency/cola_classifier',
+    '/home/chiyu94/scratch/hashtag_paraphrase/evaluation/cola_classifier',
     checkpoint_file='checkpoint_best.pt',
-    data_name_or_path='style_paraphrase/evaluation/fluency/cola_classifier/cola-bin'
+    data_name_or_path='/home/chiyu94/scratch/hashtag_paraphrase/evaluation/cola_classifier/cola-bin'
 )
 
+print("finish load model")
 def detokenize(x):
     x = x.replace(" .", ".").replace(" ,", ",").replace(" !", "!").replace(" ?", "?").replace(" )", ")").replace("( ", "(")
     return x
@@ -37,9 +41,15 @@ ncorrect, nsamples = 0, 0
 roberta.cuda()
 roberta.eval()
 
-
+print("load data")
 with open(args.input_file, "r") as f:
     author_data = f.read().strip().split("\n")
+    
+args.output_path = args.output_path + "/" + args.input_file.split("/")[-1].replace(".json", "/")
+print(args.output_path)
+
+if not os.path.exists(args.output_path):
+    os.mkdir(args.output_path)
 
 unk_bpe = roberta.bpe.encode(" <unk>").strip()
 
@@ -49,6 +59,7 @@ for label in ["acceptable", "unacceptable"]:
     prediction_data[label.lower()] = []
 
 label_data = ["acceptable" for _ in author_data]
+author_data = [json.loads(x)["paraphrase"] for x in author_data] 
 
 for i in tqdm.tqdm(range(0, len(author_data), args.batch_size), total=len(author_data) // args.batch_size):
     sds = author_data[i:i + args.batch_size]
@@ -86,6 +97,10 @@ for i in tqdm.tqdm(range(0, len(author_data), args.batch_size), total=len(author
 
 overall_accuracy = "<b>{: <31}</> = <b><green>{:6.2f}</> ({:3d} / {:3d})\n\n".format("overall accuracy", float(ncorrect) * 100 / float(nsamples), ncorrect, nsamples)
 
+with open(os.path.join(args.output_path,"acceptability.summary"), "w") as f:
+    f.write("overall_accuracy: {:6f}\n".format(float(ncorrect)*100/float(nsamples)))
+    
+
 print("")
 output = ""
 
@@ -105,5 +120,9 @@ output += "{}\n\n".format("".join("=" for _ in range(60)))
 
 print(Bcolors.postprocess(output))
 
-with open(args.input_file + ".acceptability_labels", "w") as f:
+if not args.output_path:
+    args.output_path = "/".join(args.generated_path.split("/")[:-1]) + "/pp_similarity_unique.txt"
+
+with open(os.path.join(args.output_path,"acceptability_labels"), "w") as f:
     f.write("\n".join(argmax_results) + "\n")
+    

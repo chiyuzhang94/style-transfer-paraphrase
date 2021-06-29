@@ -1,7 +1,7 @@
 import re
 import string
 import collections as cll
-from scipy.stats import kendalltau
+# from scipy.stats import kendalltau
 import math
 import subprocess
 
@@ -45,34 +45,34 @@ def get_bucket(x, thresholds):
     return bucket
 
 
-def get_kendall_tau(x1, x2):
-    x1 = normalize_answer(x1)
-    x2 = normalize_answer(x2)
+# def get_kendall_tau(x1, x2):
+#     x1 = normalize_answer(x1)
+#     x2 = normalize_answer(x2)
 
-    x1_tokens = x1.split()
-    x2_tokens = x2.split()
+#     x1_tokens = x1.split()
+#     x2_tokens = x2.split()
 
-    for x1_index, tok in enumerate(x1_tokens):
-        try:
-            x2_index = x2_tokens.index(tok)
-            x1_tokens[x1_index] = "<match-found>-{:d}".format(x1_index + 1)
-            x2_tokens[x2_index] = "<match-found>-{:d}".format(x1_index + 1)
-        except ValueError:
-            pass
+#     for x1_index, tok in enumerate(x1_tokens):
+#         try:
+#             x2_index = x2_tokens.index(tok)
+#             x1_tokens[x1_index] = "<match-found>-{:d}".format(x1_index + 1)
+#             x2_tokens[x2_index] = "<match-found>-{:d}".format(x1_index + 1)
+#         except ValueError:
+#             pass
 
-    common_seq_x1 = [int(x1_tok_flag.split("-")[-1]) for x1_tok_flag in x1_tokens if x1_tok_flag.startswith("<match-found>")]
-    common_seq_x2 = [int(x2_tok_flag.split("-")[-1]) for x2_tok_flag in x2_tokens if x2_tok_flag.startswith("<match-found>")]
+#     common_seq_x1 = [int(x1_tok_flag.split("-")[-1]) for x1_tok_flag in x1_tokens if x1_tok_flag.startswith("<match-found>")]
+#     common_seq_x2 = [int(x2_tok_flag.split("-")[-1]) for x2_tok_flag in x2_tokens if x2_tok_flag.startswith("<match-found>")]
 
-    assert len(common_seq_x1) == len(common_seq_x2)
+#     assert len(common_seq_x1) == len(common_seq_x2)
 
-    ktd = kendalltau(common_seq_x1, common_seq_x2).correlation
-    anomaly = False
+#     ktd = kendalltau(common_seq_x1, common_seq_x2).correlation
+#     anomaly = False
 
-    if math.isnan(ktd):
-        ktd = -1.0
-        anomaly = True
+#     if math.isnan(ktd):
+#         ktd = -1.0
+#         anomaly = True
 
-    return ktd, anomaly
+#     return ktd, anomaly
 
 
 def normalize_answer(s):
