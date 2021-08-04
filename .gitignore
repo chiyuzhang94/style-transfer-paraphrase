@@ -5,6 +5,9 @@ __pycache__/
 # C extensions
 *.so
 
+# shell file
+*.sh
+
 # Distribution / packaging
 bin/
 build/
