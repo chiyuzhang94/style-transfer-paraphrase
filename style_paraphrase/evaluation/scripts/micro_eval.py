@@ -43,31 +43,35 @@ valid_count = {
     "acc_cola_sim": 0
 }
 normalized_generated_data = {
-    "acc_sim": [],
-    "cola_sim": [],
-    "acc_cola_sim": []
+    "acc_sim": ["original_tweet\tgeneration\ttarget_cls\tpredict_label"],
+    "cola_sim": ["original_tweet\tgeneration\ttarget_cls\tpredict_label"],
+    "acc_cola_sim": ["original_tweet\tgeneration\ttarget_cls\tpredict_label"],
+    "all_samples": ["original_tweet\tgeneration\tagreement\ttarget_cls\tpredict_label\tacceptability\tsimilarity"]
 }
 
 for cd, pd, gd, ad, otd in zip(classifier_data, paraphrase_data, generated_data, acceptability_data, orginal_tweet_data):
     curr_scores = max([float(x) for x in pd.split(",")])
-
+    agreement = "correct" if cd.split("\t")[0] == cd.split("\t")[1] else "incorrect" 
+    
+    normalized_generated_data["all_samples"].append(otd +"\t"+ gd +"\t"+ agreement +"\t"+ cd.split("\t")[0] +"\t"+ cd.split("\t")[1] +"\t"+ ad + "\t"+ str(curr_scores))
+    
     # check acc_sim
     if cd.split("\t")[0] == cd.split("\t")[1]:
         valid_count["acc_sim"] += 1
         scores["acc_sim"].append(curr_scores)
-        normalized_generated_data["acc_sim"].append(cd.split("\t")[0]+"\t"+gd+"\t"+otd)
+        normalized_generated_data["acc_sim"].append(otd +"\t"+ gd +"\t"+ cd.split("\t")[0] +"\t"+ cd.split("\t")[1])
     else:
         scores["acc_sim"].append(0)
-        normalized_generated_data["acc_sim"].append("xxxxx\txxxxxxxx\txxxxxxxxxxxxxxxx")
+        normalized_generated_data["acc_sim"].append("xxxxxxx\txxxxxxxxx\txxxxxxxx\txxxxxxxx")
 
     # check cola_sim
     if ad == "acceptable":
         valid_count["cola_sim"] += 1
         scores["cola_sim"].append(curr_scores)
-        normalized_generated_data["cola_sim"].append(cd.split("\t")[0]+"\t"+gd+"\t"+otd)
+        normalized_generated_data["cola_sim"].append(otd +"\t"+ gd +"\t"+ cd.split("\t")[0] +"\t"+ cd.split("\t")[1])
     else:
         scores["cola_sim"].append(0)
-        normalized_generated_data["cola_sim"].append("xxxxxxxx\txxxxxx\txxxxxxxxxxxxxxxx")
+        normalized_generated_data["cola_sim"].append("xxxxxxx\txxxxxxxxx\txxxxxxxx\txxxxxxxx")
 
     # check acc_cola
     if ad == "acceptable" and cd.split("\t")[0] == cd.split("\t")[1]:
@@ -75,11 +79,11 @@ for cd, pd, gd, ad, otd in zip(classifier_data, paraphrase_data, generated_data,
         scores["acc_cola"].append(1)
         valid_count["acc_cola_sim"] += 1
         scores["acc_cola_sim"].append(curr_scores)
-        normalized_generated_data["acc_cola_sim"].append(cd.split("\t")[0]+"\t"+gd+"\t"+otd)
+        normalized_generated_data["acc_cola_sim"].append(otd +"\t"+ gd +"\t"+ cd.split("\t")[0] +"\t"+ cd.split("\t")[1])
     else:
         scores["acc_cola"].append(0)
         scores["acc_cola_sim"].append(0)
-        normalized_generated_data["acc_cola_sim"].append("xxxxxxx\txxxxxxxxx\txxxxxxxxxxxxxxxx")
+        normalized_generated_data["acc_cola_sim"].append("xxxxxxx\txxxxxxxxx\txxxxxxxx\txxxxxxxx")
 
 summary = ""
 
@@ -95,3 +99,6 @@ for metric in ["acc_sim", "cola_sim", "acc_cola", "acc_cola_sim"]:
 
 with open(args.output_path + "all_results_summary".format(metric), "w") as f:
     f.write(summary)
+    
+with open(args.output_path + "results.all_samples_normalized", "w") as f:
+    f.write("\n".join(normalized_generated_data["all_samples"]) + "\n")
