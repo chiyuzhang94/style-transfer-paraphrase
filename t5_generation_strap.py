@@ -161,7 +161,7 @@ def main():
 
     file_name = args.input_file.split("/")[-1].replace(".tsv", "")
     
-    output_file = os.path.join(args.output_dir, "{}-{}_{}-{}_{}_transfer.json".format(file_name,args.model_name,args.source_cls,args.target_cls,str(args.top_p)))
+    output_file = os.path.join(args.output_dir, "{}-{}_{}-{}_{}_transfer.json".format(file_name, args.model_name, args.source_cls, args.target_cls, str(args.top_p)))
     
     if os.path.exists(output_file):
         os.remove(output_file)
