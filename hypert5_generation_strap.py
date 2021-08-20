@@ -207,8 +207,8 @@ def main():
             output_all = {}
             output_all["para_text"] = para_text
             output_all["org_tweet"] = org_tweet
-            output_all["source_cls"] = args.source_cls
-            output_all["target_cls"] = args.target_cls
+            output_all["source_cls"] = args.source_cls.split("-")[-1] if "-" in args.source_cls else args.source_cls
+            output_all["target_cls"] = args.target_cls.split("-")[-1] if "-" in args.target_cls else args.target_cls
 
             output_all["paraphrase"] = paraphrases[0]
 
